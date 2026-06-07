@@ -63,6 +63,8 @@ function renderSources(qa) {
           </div>
           <p class="muted"><strong>Fields used:</strong> ${escapeHtml((source.fieldsUsed || []).join(", "))}</p>
           ${source.postalStatuses ? `<p class="muted"><strong>Postal cleanup:</strong> ${escapeHtml(formatCounts(source.postalStatuses))}</p>` : ""}
+          ${source.licenceTypes ? `<p class="muted"><strong>Licence types:</strong> ${escapeHtml(formatCounts(source.licenceTypes))}</p>` : ""}
+          ${source.duplicateRows ? `<p class="muted"><strong>Duplicate source rows collapsed:</strong> ${Number(source.duplicateRows).toLocaleString()}</p>` : ""}
           <ul class="tag-list">
             ${(source.limitations || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
           </ul>

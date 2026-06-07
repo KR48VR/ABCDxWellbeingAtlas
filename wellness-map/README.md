@@ -12,8 +12,9 @@ Open `http://127.0.0.1:8766/`.
 
 ## Data Coverage
 
-- Bundled layer: 16 health records, 133 ageing/eldercare records, 1,856 children records, 4,214 youth records, 6,888 sport/exercise venue records, 461 park records, and 867 park connector records.
-- Health coverage includes curated public institutions/polyclinics; it is not yet a complete HealthHub/CHAS licensed-clinic import.
+- Bundled layer: 1,454 health records, 133 ageing/eldercare records, 1,856 children records, 4,214 youth records, 6,888 sport/exercise venue records, 461 park records, and 867 park connector records.
+- Health coverage includes curated public institutions/polyclinics, 1,189 mapped CHAS clinic points, and 249 HSA registered retail pharmacy locations.
+- The CHAS import maps 1,189 unique clinic points from 1,193 source rows; 3 duplicate source rows are collapsed and 1 source row with impossible geometry is skipped rather than approximated.
 - Ageing coverage includes data.gov.sg eldercare points such as senior activity centres, cluster support, senior group homes, and aged-care homes. It does not yet include the full live AIC Active Ageing Centre locator.
 - Ageing sector is marked as Public, Private, People/social sector, or Unknown using conservative provider/name inference.
 - Children coverage includes 1,856 ECDA childcare/kindergarten centre records geocoded through OneMap postal-code coordinates.
@@ -32,6 +33,6 @@ Open `http://127.0.0.1:8766/`.
 
 ## Next Data Work
 
-- Add HealthHub, CHAS, CPF/MediSave, and manual-review ingestion with provenance fields.
+- Add non-CHAS private specialist, allied-health, CPF/MediSave, and manual-review ingestion with provenance fields.
 - Replace postal-sector fallback with exact OneMap geocoding once an API token is configured server-side.
 - Upgrade the population-weighted benchmark from footprint proxy to dwelling-unit or subzone population weights.
