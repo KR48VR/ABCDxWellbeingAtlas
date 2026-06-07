@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ABCD x Wellbeing Atlas: Care, Sport, Parks &amp; More for All Ages</title>
+    <link rel="preconnect" href="https://unpkg.com" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="./styles.css?v=13" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="toolbar" aria-label="Search and filters">
+        <div class="brand-block">
+          <p class="eyebrow">ABCD x Wellbeing Atlas</p>
+          <h1>Care, Sport, Parks &amp; More for All Ages</h1>
+        </div>
+
+        <form id="search-form" class="search-form">
+          <label class="search-label" for="location-input">Postal code or place</label>
+          <div class="search-row">
+            <input id="location-input" inputmode="numeric" autocomplete="off" placeholder="560723" />
+            <button type="submit" title="Search location" aria-label="Search location">
+              <span aria-hidden="true">⌕</span>
+            </button>
+            <button id="locate-button" type="button" title="Use my location" aria-label="Use my location">
+              <span aria-hidden="true">◎</span>
+            </button>
+          </div>
+        </form>
+
+        <div class="filter-group" aria-label="Facility categories">
+          <label class="toggle">
+            <input type="checkbox" value="healthcare" checked />
+            <span class="dot health"></span>
+            <span>Health</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" value="sport" checked />
+            <span class="dot sport"></span>
+            <span>Sport</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" value="ageing" checked />
+            <span class="dot ageing"></span>
+            <span>Ageing</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" value="children" checked />
+            <span class="dot children"></span>
+            <span>Children</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" value="youth" checked />
+            <span class="dot youth"></span>
+            <span>Youth</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" value="park" checked />
+            <span class="dot park"></span>
+            <span>Parks</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" value="connector" checked />
+            <span class="dot connector"></span>
+            <span>PCN</span>
+          </label>
+        </div>
+
+        <div class="toolbar-actions">
+          <button id="sync-button" type="button" title="Sync public open-data feeds" aria-label="Sync public open-data feeds">
+            <span aria-hidden="true">↻</span>
+          </button>
+          <button id="reset-button" type="button" title="Reset map" aria-label="Reset map">
+            <span aria-hidden="true">⌂</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="content-grid">
+        <aside class="panel" aria-label="Nearest facilities">
+          <div class="location-summary">
+            <div>
+              <p class="eyebrow">Selected point</p>
+              <h2 id="selected-title">Singapore centroid</h2>
+            </div>
+            <p id="selected-meta">Click the map or search a postal code.</p>
+          </div>
+
+          <div class="proximity-grid" id="proximity-grid" aria-label="Facility counts by distance">
+            <div class="proximity-head">
+              <span>Type</span>
+              <span>500m</span>
+              <span>1km</span>
+              <span id="selected-radius-label">2km</span>
+            </div>
+          </div>
+
+          <section class="benchmark-section" aria-label="Benchmark comparison">
+            <div class="benchmark-head">
+              <h2>Benchmarks</h2>
+              <div class="benchmark-controls">
+                <select id="benchmark-mode" aria-label="Benchmark mode">
+                  <option value="residential">Residential locations</option>
+                  <option value="weighted">Population weighted</option>
+                </select>
+                <select id="benchmark-radius" aria-label="Benchmark radius">
+                  <option value="0.5">500m</option>
+                  <option value="1" selected>1km</option>
+                  <option value="2">2km</option>
+                </select>
+              </div>
+            </div>
+            <p class="benchmark-help">Percentile compares this postal code with benchmark residential points; 80 means it ranks above about 80% of points.</p>
+            <p id="benchmark-context" class="benchmark-context">Benchmark data loading...</p>
+            <div class="benchmark-links">
+              <a id="benchmark-detail-link" class="benchmark-detail-link" href="./benchmark-details.html" target="_blank" rel="noreferrer">Open benchmark details</a>
+              <a class="benchmark-detail-link" href="./data-qa.html" target="_blank" rel="noreferrer">Data QA & methodology</a>
+            </div>
+            <div id="benchmark-list" class="benchmark-list"></div>
+          </section>
+
+          <section class="nearest-section" aria-label="Nearest by category">
+            <h2>Nearest by category</h2>
+            <div class="nearest-strip" id="nearest-strip"></div>
+          </section>
+
+          <section class="overall-section" aria-label="Nearest overall">
+            <h2>Nearest overall</h2>
+            <div id="overall-list" class="overall-list"></div>
+          </section>
+
+          <div class="list-header">
+            <h2 id="facility-list-title">Within 2 km</h2>
+            <select id="radius-select" aria-label="Distance radius">
+              <option value="all">All</option>
+              <option value="1">1 km</option>
+              <option value="2" selected>2 km</option>
+              <option value="5">5 km</option>
+              <option value="10">10 km</option>
+            </select>
+          </div>
+
+          <div id="facility-list" class="facility-list"></div>
+        </aside>
+
+        <section class="map-wrap" aria-label="Map">
+          <div id="map"></div>
+          <div id="sync-status" class="sync-status">Open-data bundle loaded</div>
+        </section>
+      </section>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="./data/facilities.js?v=11"></script>
+    <script src="./data/benchmarks.js?v=3"></script>
+    <script src="./app.js?v=20"></script>
+  </body>
+</html>

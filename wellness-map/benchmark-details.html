@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Benchmark Details | ABCD x Wellbeing Atlas</title>
+    <link rel="stylesheet" href="./benchmark-details.css?v=2" />
+  </head>
+  <body>
+    <main class="report-shell">
+      <header class="report-header">
+        <p class="eyebrow">ABCD x Wellbeing Atlas</p>
+        <h1>Benchmark Details</h1>
+        <p id="report-subtitle">Loading benchmark report...</p>
+        <p><a href="./data-qa.html" target="_blank" rel="noreferrer">Data QA & methodology</a></p>
+      </header>
+
+      <section class="method-card">
+        <h2>How To Read This</h2>
+        <p>Percentile compares the selected postal code with benchmark residential points. Percentile 80 means the selected point ranks above about 80% of comparison points for that category and radius.</p>
+        <p id="report-method"></p>
+      </section>
+
+      <section id="report-content" class="report-content"></section>
+    </main>
+
+    <script src="./data/facilities.js?v=11"></script>
+    <script src="./data/benchmarks.js?v=3"></script>
+    <script src="./benchmark-details.js?v=4"></script>
+  </body>
+</html>

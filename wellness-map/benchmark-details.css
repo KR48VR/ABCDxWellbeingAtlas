@@ -1,0 +1,281 @@
+:root {
+  --ink: #172124;
+  --muted: #657276;
+  --line: #dce4e4;
+  --paper: #f7f6ef;
+  --surface: #ffffff;
+  --health: #147c86;
+  --ageing: #8b6f2f;
+  --children: #2f71b8;
+  --youth: #a9448d;
+  --sport: #d05a34;
+  --park: #2f8a4d;
+  --connector: #7a5ab8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.report-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 18px 48px;
+}
+
+.report-header,
+.method-card,
+.category-section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.report-header {
+  padding: 22px;
+}
+
+.eyebrow {
+  margin: 0 0 5px;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+}
+
+h1,
+h2,
+h3,
+p {
+  letter-spacing: 0;
+}
+
+h1 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.12;
+}
+
+.report-header p:last-child,
+.method-card p {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.method-card {
+  margin: 14px 0;
+  padding: 16px;
+}
+
+.method-card h2 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+
+.method-card p {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.report-content {
+  display: grid;
+  gap: 14px;
+}
+
+.category-section {
+  padding: 16px;
+}
+
+.category-heading {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.category-heading h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.selected-count {
+  font-size: 24px;
+  font-weight: 860;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  border-radius: 50%;
+}
+
+.dot.healthcare {
+  background: var(--health);
+}
+
+.dot.ageing {
+  border: 2px solid var(--ageing);
+}
+
+.dot.children {
+  background: var(--children);
+  border-radius: 0;
+  clip-path: polygon(50% 4%, 96% 92%, 4% 92%);
+}
+
+.dot.youth {
+  background: var(--youth);
+  border-radius: 0;
+  clip-path: polygon(24% 4%, 76% 4%, 100% 50%, 76% 96%, 24% 96%, 0 50%);
+}
+
+.dot.sport {
+  background: var(--sport);
+}
+
+.dot.park {
+  background: var(--park);
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.dot.connector {
+  border: 2px solid var(--connector);
+  border-radius: 2px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.summary-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.summary-card h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.metric-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.metric-line strong {
+  color: var(--ink);
+}
+
+details {
+  margin-top: 12px;
+}
+
+summary {
+  cursor: pointer;
+  color: #315d8a;
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.examples-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.example-group {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  min-width: 0;
+}
+
+.example-group h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.example-list {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+
+.example-list-title {
+  margin: 10px 0 6px;
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.example-row {
+  display: grid;
+  grid-template-columns: 74px 1fr 42px;
+  gap: 8px;
+  align-items: start;
+  border-top: 1px solid var(--line);
+  padding-top: 7px;
+  font-size: 11px;
+}
+
+.postal-code {
+  font-weight: 760;
+}
+
+.point-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.point-address {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+
+.point-address[data-loaded="true"] {
+  color: var(--ink);
+}
+
+.point-constituency {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.point-count {
+  text-align: right;
+  font-weight: 820;
+}
+
+.empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 820px) {
+  .summary-grid,
+  .examples-grid {
+    grid-template-columns: 1fr;
+  }
+}
