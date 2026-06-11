@@ -10,6 +10,23 @@ const CATEGORY = {
 
 const CATEGORY_ORDER = ["healthcare", "ageing", "children", "youth", "sport", "park", "connector"];
 
+const CITY_CENTER = { lat: 1.2836, lng: 103.8519, label: "Raffles Place / Marina Bay" };
+
+const CLIMATE_MONTHS = [
+  { label: "Jan", season: "NE monsoon", windFrom: 25, windLabel: "NE wind", windDetail: "seasonal N/NE" },
+  { label: "Feb", season: "NE monsoon", windFrom: 25, windLabel: "NE wind", windDetail: "seasonal N/NE" },
+  { label: "Mar", season: "Late NE", windFrom: 35, windLabel: "NE wind", windDetail: "lighter N/NE" },
+  { label: "Apr", season: "Inter-monsoon", windFrom: 135, windLabel: "Variable", windDetail: "variable breeze" },
+  { label: "May", season: "Inter-monsoon", windFrom: 150, windLabel: "Variable", windDetail: "variable breeze" },
+  { label: "Jun", season: "SW monsoon", windFrom: 160, windLabel: "S/SE wind", windDetail: "seasonal S/SE" },
+  { label: "Jul", season: "SW monsoon", windFrom: 160, windLabel: "S/SE wind", windDetail: "seasonal S/SE" },
+  { label: "Aug", season: "SW monsoon", windFrom: 160, windLabel: "S/SE wind", windDetail: "seasonal S/SE" },
+  { label: "Sep", season: "SW monsoon", windFrom: 160, windLabel: "S/SE wind", windDetail: "seasonal S/SE" },
+  { label: "Oct", season: "Inter-monsoon", windFrom: 115, windLabel: "Variable", windDetail: "variable storms" },
+  { label: "Nov", season: "Inter-monsoon", windFrom: 65, windLabel: "Variable", windDetail: "variable wetter" },
+  { label: "Dec", season: "NE monsoon", windFrom: 25, windLabel: "NE wind", windDetail: "seasonal N/NE" }
+];
+
 const POSTAL_HINTS = {
   "01": [1.2836, 103.8519, "Raffles Place / Marina Bay"],
   "02": [1.2797, 103.8476, "Chinatown / Tanjong Pagar"],
@@ -100,8 +117,14 @@ const state = {
   radiusKm: 2,
   benchmarkMode: "residential",
   benchmarkRadius: 1,
+  housingFlatType: "all",
+  housingOverlayExpanded: false,
+  climateVisible: false,
+  climateMonth: new Date().getMonth(),
+  climateRestoreView: null,
   selected: { lat: 1.3521, lng: 103.8198, title: "Singapore centroid", meta: "Click the map or search a postal code." },
   markers: new Map(),
+  climateLayer: null,
   userMarker: null,
   map: null,
   searchInProgress: false
@@ -126,6 +149,13 @@ const el = {
   benchmarkContext: document.getElementById("benchmark-context"),
   benchmarkDetailLink: document.getElementById("benchmark-detail-link"),
   benchmarkList: document.getElementById("benchmark-list"),
+  housingFlatType: document.getElementById("housing-flat-type"),
+  housingContext: document.getElementById("housing-context"),
+  housingList: document.getElementById("housing-list"),
+  climateToggle: document.getElementById("climate-toggle"),
+  climateMonth: document.getElementById("climate-month"),
+  climateLegend: document.getElementById("climate-legend"),
+  mapHousingOverlay: document.getElementById("map-housing-overlay"),
   listTitle: document.getElementById("facility-list-title"),
   status: document.getElementById("sync-status")
 };
@@ -143,6 +173,8 @@ function init() {
     attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 19
   }).addTo(state.map);
+  state.climateLayer = L.layerGroup().addTo(state.map);
+  if (el.climateMonth) el.climateMonth.value = String(state.climateMonth);
 
   state.map.on("click", (event) => {
     setSelected({
@@ -216,6 +248,33 @@ function bindEvents() {
   el.benchmarkRadius.addEventListener("change", () => {
     state.benchmarkRadius = Number(el.benchmarkRadius.value);
     render();
+  });
+
+  el.housingFlatType.addEventListener("change", () => {
+    state.housingFlatType = el.housingFlatType.value;
+    render();
+  });
+
+  el.climateToggle?.addEventListener("click", () => {
+    state.climateVisible = !state.climateVisible;
+    el.climateToggle.setAttribute("aria-pressed", String(state.climateVisible));
+    el.climateToggle.classList.toggle("active", state.climateVisible);
+    if (el.climateLegend) el.climateLegend.hidden = !state.climateVisible;
+    renderClimateLayer();
+    if (state.climateVisible) {
+      state.climateRestoreView = {
+        center: state.map.getCenter(),
+        zoom: state.map.getZoom()
+      };
+      fitClimateView();
+    } else {
+      restoreClimateView();
+    }
+  });
+
+  el.climateMonth?.addEventListener("change", () => {
+    state.climateMonth = Number(el.climateMonth.value);
+    renderClimateLayer();
   });
 
   document.querySelectorAll(".toggle input").forEach((input) => {
@@ -381,10 +440,435 @@ function render() {
 
   renderProximitySummary(facilities);
   renderBenchmarks();
+  renderHousing();
   renderNearest(facilities);
   renderOverallNearest(visibleSet);
   renderList(visibleSet);
   renderMarkers(visibleSet);
+  renderClimateLayer();
+}
+
+function renderHousing() {
+  const summary = housingSummary();
+  if (!summary.available) {
+    el.housingContext.textContent = "Housing data unavailable.";
+    el.housingList.innerHTML = "";
+    renderMapHousing(summary);
+    return;
+  }
+
+  if (!summary.town) {
+    el.housingContext.textContent = "Search an HDB postal code or block address to infer an HDB town for price/rent context.";
+    el.housingList.innerHTML = "";
+    renderMapHousing(summary);
+    return;
+  }
+
+  el.housingContext.textContent = summary.context;
+
+  el.housingList.innerHTML = [
+    housingCard("Resale", summary.resale, "median resale price", formatMoney, "sale transactions"),
+    housingCard("Rent", summary.rent, "median monthly rent", formatMoney, "rental approvals"),
+    housingSynthesisCard(summary)
+  ].join("");
+  renderMapHousing(summary);
+}
+
+function housingSummary() {
+  const data = window.HOUSING_DATA;
+  if (!data) return { available: false };
+
+  const town = selectedHousingTown();
+  const flatType = state.housingFlatType;
+  const flatLabel = flatType === "all" ? "all HDB flat types" : flatType;
+  if (!town) return { available: true, town: "" };
+
+  const resale = housingMetric(data.resale, town, flatType);
+  const rent = housingMetric(data.rent, town, flatType);
+  const amenity = amenityAccessSummary();
+  const centrality = cityProximitySummary();
+  const transit = transitSummary();
+  const context = `${titleCase(town)} · ${flatLabel} · latest 12 months. Resale window ${data.resale.windowStart} to ${data.resale.latestMonth}; rent window ${data.rent.windowStart} to ${data.rent.latestMonth}.`;
+
+  return {
+    available: true,
+    town,
+    flatType,
+    flatLabel,
+    resale,
+    rent,
+    amenity,
+    centrality,
+    transit,
+    context,
+    synthesis: housingSynthesisText(amenity, resale, rent)
+  };
+}
+
+function housingMetric(dataset, town, flatType) {
+  const townMetric = dataset.byTown?.[town]?.[flatType] || null;
+  const sgMetric = dataset.singapore?.[flatType] || null;
+  const percentile = dataset.percentiles?.[flatType]?.[town] || null;
+  if (!townMetric || !sgMetric) return null;
+  return { town: townMetric, singapore: sgMetric, percentile };
+}
+
+function housingCard(label, metric, metricLabel, formatter, countLabel) {
+  if (!metric) {
+    return `
+      <article class="housing-card">
+        <div class="housing-title">
+          <span>${label}</span>
+          <strong>Unavailable</strong>
+        </div>
+        <p class="housing-note">No recent HDB ${label.toLowerCase()} records for this town/flat-type selection.</p>
+      </article>
+    `;
+  }
+
+  const diff = metric.town.median - metric.singapore.median;
+  const status = diff > 0 ? "above" : diff < 0 ? "below" : "average";
+  const statusLabel = status === "average" ? "avg" : status;
+  const diffText = `${diff >= 0 ? "+" : ""}${formatter(diff)} vs SG ${formatter(metric.singapore.median)}`;
+  const quartiles = `${formatter(metric.town.p25)} to ${formatter(metric.town.p75)}`;
+
+  return `
+    <article class="housing-card">
+      <div class="housing-title">
+        <span>${label}</span>
+        <strong>${formatter(metric.town.median)}</strong>
+      </div>
+      <div class="housing-comparison">
+        <span>${metricLabel}</span>
+        <strong>${diffText}</strong>
+        <span class="benchmark-chip ${status}">${statusLabel}</span>
+      </div>
+      <p class="housing-note">Percentile ${metric.percentile}; middle range ${quartiles}; ${metric.town.count.toLocaleString()} ${countLabel}.</p>
+      ${metric.town.medianPsm ? `<p class="housing-note">Median resale price per sqm: ${formatter(metric.town.medianPsm)}</p>` : ""}
+    </article>
+  `;
+}
+
+function housingSynthesisCard(summary) {
+  return `
+    <article class="housing-card synthesis">
+      <div class="housing-title">
+        <span>Planning read</span>
+      </div>
+      <p class="housing-note">${escapeHtml(summary.synthesis)}</p>
+      <p class="housing-note">Housing is town-level; amenity access uses ${formatRadiusLabel(state.benchmarkRadius)} facility counts around the selected point.</p>
+    </article>
+  `;
+}
+
+function renderMapHousing(summary) {
+  if (!el.mapHousingOverlay) return;
+  el.mapHousingOverlay.className = "map-housing-overlay compact";
+
+  if (!summary.available) {
+    el.mapHousingOverlay.innerHTML = `
+      <div class="map-housing-title">Housing</div>
+      <p>Housing data unavailable.</p>
+    `;
+    return;
+  }
+  if (!summary.town) {
+    el.mapHousingOverlay.innerHTML = `
+      <div class="map-housing-title">Housing</div>
+      <p>Search an HDB postal code or block to show affordability on the map.</p>
+    `;
+    return;
+  }
+
+  const expanded = state.housingOverlayExpanded;
+  el.mapHousingOverlay.className = `map-housing-overlay ${expanded ? "expanded" : "collapsed"}`;
+  const toggleLabel = expanded ? "Collapse" : "Expand";
+  const inlineMetrics = [
+    mapHousingInlineMetric("Resale", summary.resale),
+    mapHousingInlineMetric("Rent", summary.rent)
+  ].join(" · ");
+
+  el.mapHousingOverlay.innerHTML = `
+    <div class="map-housing-head">
+      <div class="map-housing-title">
+        <span>${escapeHtml(titleCase(summary.town))}</span>
+        <small>${escapeHtml(summary.flatLabel)}</small>
+      </div>
+      <button type="button" class="map-housing-toggle" data-housing-overlay-toggle aria-expanded="${expanded}" aria-label="${toggleLabel} housing overlay">${toggleLabel}</button>
+    </div>
+    ${expanded ? `
+      <div class="map-housing-metrics">
+        ${mapHousingMetric("Resale", summary.resale)}
+        ${mapHousingMetric("Rent", summary.rent)}
+      </div>
+      ${renderMapHousingSignals(summary)}
+      <small>Town-level housing · ${formatRadiusLabel(state.benchmarkRadius)} amenity access</small>
+    ` : `
+      <p class="map-housing-compact">${escapeHtml(inlineMetrics)}</p>
+      <small>Town-level housing · ${formatRadiusLabel(state.benchmarkRadius)} access</small>
+    `}
+  `;
+
+  const toggle = el.mapHousingOverlay.querySelector("[data-housing-overlay-toggle]");
+  toggle?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    state.housingOverlayExpanded = !state.housingOverlayExpanded;
+    renderHousing();
+  });
+}
+
+function mapHousingMetric(label, metric) {
+  if (!metric) return `<div><span>${label}</span><strong>N/A</strong></div>`;
+  return `
+    <div>
+      <span>${label}</span>
+      <strong>${formatMoney(metric.town.median)}</strong>
+      <small>p${metric.percentile}</small>
+    </div>
+  `;
+}
+
+function mapHousingInlineMetric(label, metric) {
+  if (!metric) return `${label} N/A`;
+  return `${label} ${formatMoney(metric.town.median)} p${metric.percentile}`;
+}
+
+function renderMapHousingSignals(summary) {
+  const amenityChips = (summary.amenity?.items || [])
+    .map((item) => {
+      const percentile = Number.isFinite(item.percentile) ? ` · p${item.percentile}` : "";
+      return signalChip(item.label, item.status, "access", `${item.count} vs avg ${formatNumber(item.avg)}${percentile}`);
+    })
+    .join("");
+  const affordabilityChips = [
+    housingSignalChip("Resale", summary.resale),
+    housingSignalChip("Rent", summary.rent)
+  ].filter(Boolean).join("");
+  const locationChip = summary.centrality
+    ? signalChip("City centre", summary.centrality.status, "centrality", `${formatDistance(summary.centrality.distanceKm)} · p${summary.centrality.percentile}`)
+    : "";
+  const transitChips = [
+    transitSignalChip("MRT", summary.transit?.mrt),
+    transitSignalChip("Bus terminal", summary.transit?.bus),
+    transitSignalChip("Future MRT", summary.transit?.futureMrt)
+  ].filter(Boolean).join("");
+
+  return `
+    <div class="map-housing-signals" aria-label="Housing and amenity signals">
+      ${locationChip || transitChips ? `
+        <div class="signal-group">
+          <span>Location</span>
+          <div>${locationChip}${transitChips}</div>
+        </div>
+      ` : ""}
+      ${amenityChips ? `
+        <div class="signal-group">
+          <span>Access</span>
+          <div>${amenityChips}</div>
+        </div>
+      ` : ""}
+      ${affordabilityChips ? `
+        <div class="signal-group">
+          <span>Affordability</span>
+          <div>${affordabilityChips}</div>
+        </div>
+      ` : ""}
+      <p class="signal-note">p = percentile. City/transit/access p compare against benchmark points; resale/rent p compares against Singapore HDB towns.</p>
+    </div>
+  `;
+}
+
+function transitSignalChip(label, item) {
+  if (!item) return "";
+  if (item.type === "future_mrt") {
+    return signalChip(label, "near", "transit", `${item.name} · ${formatDistance(item.distanceKm)} · ${item.opening || "future"}`);
+  }
+  const detail = Number.isFinite(item.percentile) ? `${formatDistance(item.distanceKm)} · p${item.percentile}` : formatDistance(item.distanceKm);
+  return signalChip(label, item.status, "transit", `${item.name} · ${detail}`);
+}
+
+function housingSignalChip(label, metric) {
+  if (!metric) return "";
+  const diff = metric.town.median - metric.singapore.median;
+  const status = diff > 0 ? "above" : diff < 0 ? "below" : "near";
+  return signalChip(label, status, "affordability", `${formatMoney(metric.town.median)} · p${metric.percentile}`);
+}
+
+function signalChip(label, status, type, detail) {
+  const normalizedStatus = status === "average" ? "near" : status;
+  const statusLabel = normalizedStatus === "near" ? "near avg" : normalizedStatus;
+  return `
+    <span class="signal-chip ${escapeHtml(type)} ${escapeHtml(normalizedStatus)}">
+      <strong>${escapeHtml(label)}</strong>
+      <span>${escapeHtml(statusLabel)}</span>
+      <small>${escapeHtml(detail)}</small>
+    </span>
+  `;
+}
+
+function housingSynthesisText(amenity, resale, rent) {
+  const affordability = [
+    metricStatusPhrase("resale", resale),
+    metricStatusPhrase("rent", rent)
+  ].filter(Boolean).join("; ");
+  const amenityText = amenity?.summary || "Amenity access benchmark unavailable";
+  return `${amenityText}; ${affordability || "housing benchmark unavailable"}.`;
+}
+
+function metricStatusPhrase(label, metric) {
+  if (!metric) return "";
+  const diff = metric.town.median - metric.singapore.median;
+  const status = diff > 0 ? "above" : diff < 0 ? "below" : "near";
+  return `${status}-SG ${label} (${formatMoney(metric.town.median)}, p${metric.percentile})`;
+}
+
+function amenityAccessSummary() {
+  const data = window.BENCHMARK_DATA;
+  if (!data) return null;
+  const mode = state.benchmarkMode;
+  const radius = String(state.benchmarkRadius);
+  const allFacilities = state.facilities.map((facility) => ({
+    ...facility,
+    distanceKm: distanceKm(state.selected.lat, state.selected.lng, facility.lat, facility.lng)
+  }));
+  const focus = [
+    ["Care", "healthcare"],
+    ["Ageing", "ageing"],
+    ["Children", "children"],
+    ["Youth", "youth"],
+    ["Sport", "sport"],
+    ["Parks", "park"],
+    ["PCN", "connector"]
+  ];
+  const items = focus.map(([label, category]) => {
+    const count = allFacilities.filter((facility) => facility.category === category && facility.distanceKm <= state.benchmarkRadius).length;
+    const metric = data.stats.singapore?.[mode]?.[category]?.[radius];
+    const avg = metric?.avg;
+    if (!Number.isFinite(avg)) return { label, category, count, avg: null, percentile: null, status: "near", phrase: `${label.toLowerCase()} unavailable` };
+    const diff = count - avg;
+    const status = diff > 0.5 ? "above" : diff < -0.5 ? "below" : "near";
+    const percentile = percentileFromHistogram(metric.hist, count);
+    return { label, category, count, avg, diff, percentile, status, phrase: `${label.toLowerCase()} ${status} SG avg` };
+  });
+  const parts = items.map((item) => item.phrase);
+  const score = items.reduce((sum, item) => sum + (item.status === "above" ? 1 : item.status === "below" ? -1 : 0), 0);
+  const headline = score >= 2 ? "strong amenity access" : score <= -2 ? "lower amenity access" : "mixed amenity access";
+  return {
+    summary: `${headline}: ${parts.join(", ")}`,
+    items,
+    parts,
+    score
+  };
+}
+
+function cityProximitySummary() {
+  const data = window.BENCHMARK_DATA;
+  const distance = distanceKm(state.selected.lat, state.selected.lng, CITY_CENTER.lat, CITY_CENTER.lng);
+  const benchmarkDistances = (data?.points || [])
+    .map((point) => benchmarkPointCoords(point))
+    .filter(Boolean)
+    .map((point) => distanceKm(point.lat, point.lng, CITY_CENTER.lat, CITY_CENTER.lng))
+    .filter(Number.isFinite);
+  const percentile = centralityPercentile(benchmarkDistances, distance);
+  const status = percentile >= 67 ? "above" : percentile <= 33 ? "below" : "near";
+  return {
+    distanceKm: distance,
+    percentile,
+    status,
+    reference: CITY_CENTER.label
+  };
+}
+
+function transitSummary() {
+  const data = window.TRANSIT_DATA;
+  if (!data) return null;
+  return {
+    mrt: nearestTransitNode(data.mrt || [], data.benchmarks?.mrt, "mrt"),
+    bus: nearestTransitNode(data.bus || [], data.benchmarks?.bus, "bus"),
+    futureMrt: nearestTransitNode(data.futureMrt || [], data.benchmarks?.futureMrt, "future")
+  };
+}
+
+function nearestTransitNode(nodes, benchmark, type) {
+  const nearest = nodes
+    .map((node) => ({
+      ...node,
+      distanceKm: distanceKm(state.selected.lat, state.selected.lng, node.lat, node.lng)
+    }))
+    .filter((node) => Number.isFinite(node.distanceKm))
+    .sort((a, b) => a.distanceKm - b.distanceKm)[0];
+  if (!nearest) return null;
+
+  const percentile = transitPercentileFromHistogram(benchmark?.hist, nearest.distanceKm);
+  const status = transitStatus(type, nearest.distanceKm, percentile);
+  return { ...nearest, percentile, status };
+}
+
+function transitPercentileFromHistogram(hist, distanceKmValue) {
+  const entries = Object.entries(hist || {}).map(([key, weight]) => [Number(key), Number(weight)]);
+  const total = entries.reduce((sum, item) => sum + item[1], 0);
+  if (!total || !Number.isFinite(distanceKmValue)) return null;
+  const selectedMeters = Math.round(distanceKmValue * 1000);
+  const fartherOrSame = entries.reduce((sum, item) => sum + (item[0] >= selectedMeters ? item[1] : 0), 0);
+  return Math.max(1, Math.min(100, Math.round((fartherOrSame / total) * 100)));
+}
+
+function transitStatus(type, distanceKmValue, percentile) {
+  if (type === "future") return distanceKmValue <= 1.2 ? "above" : "near";
+  if (distanceKmValue <= 0.8) return "above";
+  if (distanceKmValue > 1.5) return "below";
+  if (!Number.isFinite(percentile)) return "near";
+  return percentile >= 67 ? "above" : percentile <= 33 ? "below" : "near";
+}
+
+function benchmarkPointCoords(point) {
+  if (Array.isArray(point)) return { lat: Number(point[2]), lng: Number(point[3]) };
+  if (point && Number.isFinite(point.lat) && Number.isFinite(point.lng)) return point;
+  return null;
+}
+
+function centralityPercentile(distances, selectedDistance) {
+  if (!distances.length || !Number.isFinite(selectedDistance)) return 0;
+  const fartherOrSame = distances.filter((distance) => distance >= selectedDistance).length;
+  return Math.max(1, Math.min(100, Math.round((fartherOrSame / distances.length) * 100)));
+}
+
+function selectedHousingTown() {
+  const data = window.HOUSING_DATA;
+  if (!data?.addressTownIndex) return "";
+  const address = `${state.selected.title || ""} ${state.selected.meta || ""}`;
+  const block = parseAddressBlock(address);
+  const normalizedAddress = normalizeAddressStreet(address);
+  if (!block || !normalizedAddress) return "";
+
+  for (const [key, town] of Object.entries(data.addressTownIndex)) {
+    const [candidateBlock, candidateStreet] = key.split("|");
+    if (candidateBlock === block && normalizedAddress.includes(candidateStreet)) return town;
+  }
+  return "";
+}
+
+function parseAddressBlock(address) {
+  const withoutPostal = String(address || "").replace(/\b\d{6}\b/g, " ");
+  const match = withoutPostal.match(/\b(?:BLK\s*)?(\d+[A-Z]?)\b/i);
+  return match ? match[1].toUpperCase() : "";
+}
+
+function normalizeAddressStreet(value) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/\bAVENUE\b/g, "AVE")
+    .replace(/\bSTREET\b/g, "ST")
+    .replace(/\bROAD\b/g, "RD")
+    .replace(/\bDRIVE\b/g, "DR")
+    .replace(/\bCRESCENT\b/g, "CRES")
+    .replace(/\bCENTRAL\b/g, "CTRL")
+    .replace(/\bNORTH\b/g, "NTH")
+    .replace(/\bSOUTH\b/g, "STH")
+    .replace(/\bUPPER\b/g, "UPP")
+    .replace(/\bBUKIT\b/g, "BT")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function renderProximitySummary(facilities) {
@@ -724,6 +1208,166 @@ function fitMapToVisibleFacilities() {
   });
 }
 
+function renderClimateLayer() {
+  if (!state.map || !state.climateLayer) return;
+  state.climateLayer.clearLayers();
+  if (!state.climateVisible) return;
+
+  const selected = state.selected;
+  const climate = CLIMATE_MONTHS[state.climateMonth] || CLIMATE_MONTHS[0];
+  const heat = heatExposureSummary();
+  const sun = sunPathSummary(state.climateMonth);
+  const downwind = (climate.windFrom + 180) % 360;
+  const sunRadiusKm = 0.86;
+
+  L.polygon([
+    [selected.lat, selected.lng],
+    latLngFromBearing(selected, 245, 0.92),
+    latLngFromBearing(selected, 282, 1.05),
+    latLngFromBearing(selected, 315, 0.92)
+  ], {
+    className: "climate-pm-wedge",
+    color: "#c026d3",
+    fillColor: "#d946ef",
+    fillOpacity: 0.18,
+    opacity: 0.7,
+    weight: 2,
+    interactive: false
+  }).addTo(state.climateLayer);
+
+  L.polyline(sunArcPoints(selected, sun.sunriseBearing, sun.sunsetBearing, sunRadiusKm), {
+    className: "climate-sun-arc",
+    color: "#ffb000",
+    opacity: 0.96,
+    weight: 5,
+    interactive: false
+  }).addTo(state.climateLayer);
+
+  L.circle([selected.lat, selected.lng], {
+    className: `heat-halo ${heat.status}`,
+    radius: 430,
+    color: heat.color,
+    fillColor: heat.color,
+    fillOpacity: 0.11,
+    opacity: 0.58,
+    weight: 2,
+    interactive: false
+  }).addTo(state.climateLayer);
+
+  const windStart = latLngFromBearing(selected, climate.windFrom, 0.76);
+  const windEnd = latLngFromBearing(selected, downwind, 0.76);
+  L.polyline([windStart, windEnd], {
+    className: "climate-wind-line",
+    color: "#0284c7",
+    opacity: 0.95,
+    weight: 5,
+    interactive: false
+  }).addTo(state.climateLayer);
+
+  climateLabel(latLngFromBearing(selected, 282, 0.72), "PM west sun", "high exposure", "sun").addTo(state.climateLayer);
+  climateLabel(latLngFromBearing(selected, downwind, 0.94), "Wind flow", climate.windDetail, "wind").addTo(state.climateLayer);
+  climateLabel(latLngFromBearing(selected, 18, 0.34), heat.label, heat.short, `heat ${heat.status}`).addTo(state.climateLayer);
+  windArrowHead(windStart, downwind).addTo(state.climateLayer);
+  windArrowHead(windEnd, downwind).addTo(state.climateLayer);
+}
+
+function fitClimateView() {
+  if (!state.map) return;
+  const targetZoom = Math.min(state.map.getZoom(), 16);
+  requestAnimationFrame(() => {
+    state.map.invalidateSize();
+    state.map.setView([state.selected.lat, state.selected.lng], targetZoom, { animate: true });
+  });
+}
+
+function restoreClimateView() {
+  if (!state.map || !state.climateRestoreView) return;
+  const { center, zoom } = state.climateRestoreView;
+  state.climateRestoreView = null;
+  state.map.setView(center, zoom, { animate: true });
+}
+
+function sunPathSummary(monthIndex) {
+  const dayOfYear = Math.round((monthIndex + 0.5) * 30.44);
+  const declination = 23.44 * Math.sin(toRad((360 / 365) * (dayOfYear - 81)));
+  const sunriseBearing = clamp(90 - declination, 63, 116);
+  const sunsetBearing = 360 - sunriseBearing;
+  return { declination, sunriseBearing, sunsetBearing };
+}
+
+function sunArcPoints(origin, startBearing, endBearing, radiusKm) {
+  const points = [];
+  const steps = 28;
+  for (let index = 0; index <= steps; index += 1) {
+    const bearing = startBearing + ((endBearing - startBearing) * index / steps);
+    points.push(latLngFromBearing(origin, bearing, radiusKm));
+  }
+  return points;
+}
+
+function heatExposureSummary() {
+  const scoredFacilities = state.facilities.map((facility) => ({
+    ...facility,
+    distanceKm: distanceKm(state.selected.lat, state.selected.lng, facility.lat, facility.lng)
+  }));
+  const parks = scoredFacilities.filter((facility) => facility.category === "park" && facility.distanceKm <= 1).length;
+  const connectors = scoredFacilities.filter((facility) => facility.category === "connector" && facility.distanceKm <= 1).length;
+  const city = cityProximitySummary();
+  let score = 0;
+  if (parks === 0) score += 2;
+  else if (parks <= 1) score += 1;
+  else score -= 1;
+  if (connectors >= 5) score -= 1;
+  if ((city?.percentile || 0) >= 85) score += 1;
+
+  if (score >= 2) return { status: "high", label: "Heat proxy", short: "higher risk", color: "#d05a34" };
+  if (score <= -1) return { status: "lower", label: "Heat proxy", short: "lower risk", color: "#2f8a4d" };
+  return { status: "mixed", label: "Heat proxy", short: "mixed risk", color: "#d97706" };
+}
+
+function climateLabel(latlng, title, detail, type) {
+  return L.marker(latlng, {
+    interactive: false,
+    icon: L.divIcon({
+      className: `climate-label ${type}`,
+      html: `<strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail)}</small>`,
+      iconSize: [92, 38],
+      iconAnchor: [46, 19]
+    })
+  });
+}
+
+function windArrowHead(latlng, bearing) {
+  return L.marker(latlng, {
+    interactive: false,
+    icon: L.divIcon({
+      className: "climate-arrow",
+      html: `<span style="transform: rotate(${bearing - 90}deg)"></span>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    })
+  });
+}
+
+function latLngFromBearing(origin, bearing, distance) {
+  const radius = 6371;
+  const angularDistance = distance / radius;
+  const bearingRad = toRad(bearing);
+  const lat1 = toRad(origin.lat);
+  const lng1 = toRad(origin.lng);
+  const lat2 = Math.asin(Math.sin(lat1) * Math.cos(angularDistance) +
+    Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(bearingRad));
+  const lng2 = lng1 + Math.atan2(
+    Math.sin(bearingRad) * Math.sin(angularDistance) * Math.cos(lat1),
+    Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(lat2)
+  );
+  return [lat2 * 180 / Math.PI, lng2 * 180 / Math.PI];
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
 async function syncOpenData() {
   showCoverageStatus();
   fitMapToVisibleFacilities();
@@ -932,6 +1576,17 @@ function toRad(value) {
 function formatDistance(km) {
   if (km < 1) return `${Math.round(km * 1000)} m`;
   return `${km.toFixed(1)} km`;
+}
+
+function formatNumber(value) {
+  if (!Number.isFinite(value)) return "N/A";
+  return Math.abs(value) >= 10 ? value.toFixed(0) : value.toFixed(1);
+}
+
+function formatMoney(value) {
+  const sign = value < 0 ? "-" : "";
+  const absolute = Math.abs(Number(value) || 0);
+  return `${sign}$${Math.round(absolute).toLocaleString()}`;
 }
 
 function qualitySignalLabel(facility) {

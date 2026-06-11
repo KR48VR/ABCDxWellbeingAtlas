@@ -14,6 +14,7 @@ function renderSummary(qa) {
     ["Facilities", qa.summary.totalFacilities],
     ["Benchmark points", qa.summary.benchmarkResidentialPoints],
     ["Constituencies", qa.summary.constituencyCount],
+    ["Housing towns", qa.summary.housingTowns || 0],
     ["Validation issues", qa.summary.invalidFacilityCount + qa.summary.duplicateIdCount],
     ["Postal fixes", qa.summary.postalCorrectionCount || 0]
   ];

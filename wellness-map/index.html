@@ -6,7 +6,7 @@
     <title>ABCD x Wellbeing Atlas: Care, Sport, Parks &amp; More for All Ages</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="./styles.css?v=13" />
+    <link rel="stylesheet" href="./styles.css?v=29" />
   </head>
   <body>
     <main class="app-shell">
@@ -87,6 +87,8 @@
             <p id="selected-meta">Click the map or search a postal code.</p>
           </div>
 
+          <p class="atlas-purpose">A planning lens for spotting neighbourhood strengths and gaps around a Singapore postal code: access, HDB affordability, transit, parks, and climate comfort. Benchmarks are comparative signals, not certified site assessments.</p>
+
           <div class="proximity-grid" id="proximity-grid" aria-label="Facility counts by distance">
             <div class="proximity-head">
               <span>Type</span>
@@ -117,35 +119,96 @@
               <a id="benchmark-detail-link" class="benchmark-detail-link" href="./benchmark-details.html" target="_blank" rel="noreferrer">Open benchmark details</a>
               <a class="benchmark-detail-link" href="./data-qa.html" target="_blank" rel="noreferrer">Data QA & methodology</a>
             </div>
-            <div id="benchmark-list" class="benchmark-list"></div>
+            <details class="panel-disclosure">
+              <summary>
+                <span>Benchmark scores</span>
+                <small>Access vs constituency, nearby, Singapore</small>
+              </summary>
+              <div id="benchmark-list" class="benchmark-list"></div>
+            </details>
           </section>
 
-          <section class="nearest-section" aria-label="Nearest by category">
-            <h2>Nearest by category</h2>
+          <details class="panel-disclosure housing-section" aria-label="Housing affordability">
+            <summary>
+              <span>Housing</span>
+              <small>HDB resale and rent context</small>
+            </summary>
+            <div class="housing-head">
+              <select id="housing-flat-type" aria-label="Housing flat type">
+                <option value="all" selected>All HDB flat types</option>
+                <option value="2-room">2-room</option>
+                <option value="3-room">3-room</option>
+                <option value="4-room">4-room</option>
+                <option value="5-room">5-room</option>
+                <option value="executive">Executive</option>
+              </select>
+            </div>
+            <p id="housing-context" class="housing-context">Housing data loading...</p>
+            <div id="housing-list" class="housing-list"></div>
+          </details>
+
+          <details class="panel-disclosure nearest-section" aria-label="Nearest by category">
+            <summary>
+              <span>Nearest by category</span>
+              <small>Closest point in each active layer</small>
+            </summary>
             <div class="nearest-strip" id="nearest-strip"></div>
-          </section>
+          </details>
 
-          <section class="overall-section" aria-label="Nearest overall">
-            <h2>Nearest overall</h2>
+          <details class="panel-disclosure overall-section" aria-label="Nearest overall">
+            <summary>
+              <span>Nearest overall</span>
+              <small>Closest active facilities</small>
+            </summary>
             <div id="overall-list" class="overall-list"></div>
-          </section>
+          </details>
 
-          <div class="list-header">
-            <h2 id="facility-list-title">Within 2 km</h2>
-            <select id="radius-select" aria-label="Distance radius">
-              <option value="all">All</option>
-              <option value="1">1 km</option>
-              <option value="2" selected>2 km</option>
-              <option value="5">5 km</option>
-              <option value="10">10 km</option>
-            </select>
-          </div>
+          <details class="panel-disclosure facility-section">
+            <summary>
+              <span>Facility list</span>
+              <small>Browse all active records in radius</small>
+            </summary>
+            <div class="list-header">
+              <h2 id="facility-list-title">Within 2 km</h2>
+              <select id="radius-select" aria-label="Distance radius">
+                <option value="all">All</option>
+                <option value="1">1 km</option>
+                <option value="2" selected>2 km</option>
+                <option value="5">5 km</option>
+                <option value="10">10 km</option>
+              </select>
+            </div>
 
-          <div id="facility-list" class="facility-list"></div>
+            <div id="facility-list" class="facility-list"></div>
+          </details>
         </aside>
 
         <section class="map-wrap" aria-label="Map">
           <div id="map"></div>
+          <div class="climate-controls" aria-label="Climate overlay controls">
+            <button id="climate-toggle" type="button" aria-pressed="false" title="Show climate overlay">Climate</button>
+            <select id="climate-month" aria-label="Climate month">
+              <option value="0">Jan</option>
+              <option value="1">Feb</option>
+              <option value="2">Mar</option>
+              <option value="3">Apr</option>
+              <option value="4">May</option>
+              <option value="5">Jun</option>
+              <option value="6">Jul</option>
+              <option value="7">Aug</option>
+              <option value="8">Sep</option>
+              <option value="9">Oct</option>
+              <option value="10">Nov</option>
+              <option value="11">Dec</option>
+            </select>
+          </div>
+          <div id="climate-legend" class="climate-legend" hidden aria-label="Climate overlay legend">
+            <div><span class="legend-line sun"></span><strong>Sun path</strong></div>
+            <div><span class="legend-swatch pm"></span><strong>PM west sun</strong></div>
+            <div><span class="legend-arrow"></span><strong>Wind flow</strong></div>
+            <div><span class="legend-swatch heat"></span><strong>Heat proxy halo</strong></div>
+          </div>
+          <div id="map-housing-overlay" class="map-housing-overlay" aria-live="polite"></div>
           <div id="sync-status" class="sync-status">Open-data bundle loaded</div>
         </section>
       </section>
@@ -154,6 +217,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="./data/facilities.js?v=12"></script>
     <script src="./data/benchmarks.js?v=4"></script>
-    <script src="./app.js?v=20"></script>
+    <script src="./data/housing.js?v=1"></script>
+    <script src="./data/transit.js?v=2"></script>
+    <script src="./app.js?v=42"></script>
   </body>
 </html>
