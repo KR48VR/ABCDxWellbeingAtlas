@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Build Journal - ABCD x Wellbeing Atlas</title>
+    <style>
+      :root {
+        --ink: #172124;
+        --muted: #5f6e72;
+        --line: #dce4e4;
+        --paper: #f7f6ef;
+        --surface: #ffffff;
+        --health: #147c86;
+        --warm: #8a341f;
+        --green: #165f3d;
+        --blue: #315d8a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--blue);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .page {
+        width: min(1120px, calc(100% - 36px));
+        margin: 0 auto;
+        padding: 32px 0 54px;
+      }
+
+      .hero,
+      .section,
+      .callout,
+      details {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .hero {
+        padding: 28px;
+        margin-bottom: 18px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 820;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.15;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        max-width: 920px;
+        font-size: clamp(30px, 5vw, 54px);
+      }
+
+      h2 {
+        font-size: 23px;
+      }
+
+      h3 {
+        font-size: 17px;
+      }
+
+      p {
+        margin: 10px 0 0;
+      }
+
+      .hero p {
+        max-width: 860px;
+        color: #405255;
+        font-size: 17px;
+      }
+
+      .top-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .top-links a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 36px;
+        padding: 7px 11px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfbf8;
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 780;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+
+      .card,
+      .section {
+        padding: 18px;
+      }
+
+      .card {
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .card strong {
+        display: block;
+        font-size: 15px;
+      }
+
+      .card span {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .section {
+        margin-bottom: 18px;
+      }
+
+      .section > h2 + p {
+        color: #405255;
+      }
+
+      .callout {
+        margin: 14px 0 0;
+        padding: 14px 16px;
+        border-left: 4px solid var(--health);
+        background: #f4faf7;
+      }
+
+      .callout.warning {
+        border-left-color: #d97706;
+        background: #fff7e8;
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 14px;
+      }
+
+      ul,
+      ol {
+        margin: 10px 0 0;
+        padding-left: 22px;
+      }
+
+      li + li {
+        margin-top: 6px;
+      }
+
+      code {
+        padding: 2px 5px;
+        border-radius: 5px;
+        background: #eef2f2;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.92em;
+      }
+
+      pre {
+        overflow-x: auto;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #172124;
+        color: #f6fbfb;
+        font-size: 13px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        padding: 10px 9px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      details {
+        margin: 12px 0 0;
+        overflow: hidden;
+      }
+
+      summary {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        align-items: center;
+        padding: 13px 15px;
+        cursor: pointer;
+        font-weight: 860;
+        list-style: none;
+      }
+
+      summary::-webkit-details-marker {
+        display: none;
+      }
+
+      summary::after {
+        content: "Open";
+        padding: 4px 8px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        background: #f7f8f5;
+        font-size: 11px;
+        font-weight: 820;
+      }
+
+      details[open] summary::after {
+        content: "Close";
+      }
+
+      .detail-body {
+        padding: 0 15px 15px;
+        color: #405255;
+      }
+
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-top: 12px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 25px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #eef2f2;
+        color: #405255;
+        font-size: 12px;
+        font-weight: 780;
+      }
+
+      .tag.green {
+        background: #dff1e7;
+        color: var(--green);
+      }
+
+      .tag.rust {
+        background: #f8e2d9;
+        color: var(--warm);
+      }
+
+      .tag.blue {
+        background: #e6eef7;
+        color: var(--blue);
+      }
+
+      .timeline {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .timeline-item {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 14px;
+        padding: 13px 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .timeline-item:first-child {
+        border-top: 0;
+      }
+
+      .timeline-item strong {
+        color: var(--health);
+      }
+
+      .timeline-item p {
+        margin-top: 0;
+      }
+
+      .small {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 820px) {
+        .grid,
+        .two-col {
+          grid-template-columns: 1fr;
+        }
+
+        .timeline-item {
+          grid-template-columns: 1fr;
+          gap: 5px;
+        }
+
+        .hero,
+        .section {
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <p class="eyebrow">Build journal and rebuild reference</p>
+        <h1>How we built ABCD x Wellbeing Atlas</h1>
+        <p>
+          This document records how the atlas was shaped through a back-and-forth collaboration: the user brought planning questions, usability concerns, and civic intent; Codex translated those into data choices, interface changes, QA checks, and rebuildable implementation steps.
+        </p>
+        <div class="top-links">
+          <a href="./index.html">Open atlas</a>
+          <a href="./benchmark-details.html">Benchmark details</a>
+          <a href="./data-qa.html">Data QA</a>
+          <a href="./README.md">README</a>
+        </div>
+      </header>
+
+      <section class="grid" aria-label="Project summary">
+        <article class="card">
+          <strong>What it is</strong>
+          <span>A static Singapore neighbourhood planning lens for access, HDB affordability, transit, parks, and climate comfort around a postal code or map point.</span>
+        </article>
+        <article class="card">
+          <strong>Why it exists</strong>
+          <span>To help people spot neighbourhood strengths and gaps, compare places fairly, and start better planning conversations from shared evidence.</span>
+        </article>
+        <article class="card">
+          <strong>How to treat it</strong>
+          <span>Use it as a comparative planning signal. It is not a certified site assessment, live routing engine, or measured block-level climate model.</span>
+        </article>
+      </section>
+
+      <section class="section">
+        <h2>The Collaboration Pattern</h2>
+        <p>
+          The build did not start as a fixed specification. It evolved like a product workshop. The user repeatedly tested the live map, noticed where the interface or assumptions felt wrong, and asked practical questions such as whether a postal code really matched the map, why the counts looked fixed, whether colours were enough, what "p" meant, and how the tool could become useful for planning rather than just lookup.
+        </p>
+        <p>
+          Codex responded by inspecting the app, changing the code, testing locally, explaining tradeoffs, and refining the next layer. This created a loop: build, observe, question, decide, verify, then improve.
+        </p>
+        <div class="callout">
+          <strong>Team decision style:</strong>
+          We favoured transparent approximations over false precision. Where a dataset was incomplete, licensed, or not exact enough, the app labels it as a proxy, marks provenance, or points to future data work.
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Chronology Of Major Decisions</h2>
+        <div class="timeline">
+          <div class="timeline-item">
+            <strong>1. Start with care</strong>
+            <p>We began with the question of whether Singapore has a comprehensive health and healthcare facilities database. The answer became a practical product idea: combine available official/open datasets into one map rather than waiting for a perfect single database.</p>
+          </div>
+          <div class="timeline-item">
+            <strong>2. Broaden wellbeing</strong>
+            <p>The user asked to add public sports and exercise facilities, parks, and a postal-code search. The scope shifted from "health map" to "wellbeing atlas". Distance from a searched postal code or dropped map point became the main interaction.</p>
+          </div>
+          <div class="timeline-item">
+            <strong>3. Fix location trust</strong>
+            <p>Early versions had postal-code and map-position mismatches. We moved towards exact OneMap postal-code geocoding where possible and made the selected point explicit so users can trust what is being measured.</p>
+          </div>
+          <div class="timeline-item">
+            <strong>4. Make all records visible</strong>
+            <p>The user noticed that headline counts were not fully reflected in lists and map markers. We tightened the rendering logic so counts, visible layers, radius filters, side lists, and map markers stayed aligned.</p>
+          </div>
+          <div class="timeline-item">
+            <strong>5. Add hover feedback</strong>
+            <p>The user wanted popups on map hover, not only when clicking the sidebar. We added marker popups so the map itself became more inspectable.</p>
+          </div>
+          <div class="timeline-item">
+            <strong>6. Replace reviews</strong>
+            <p>Google reviews would require API credentials, licensing compliance, and ongoing cost. We replaced them with quality signals that the static app can honestly support: official source, access information, and distance.</p>
+          </div>
+          <div class="timeline-item">
+            <strong>7. Add age groups</strong>
+            <p>The atlas expanded to ageing facilities, children facilities, and then separate youth facilities after the user correctly pointed out that teenagers may not appreciate being lumped with children.</p>
+          </div>
+          <div class="timeline-item">
+            <strong>8. Improve accessibility</strong>
+            <p>Colours alone became hard to distinguish, so we added shapes to markers and layer toggles. This made categories more legible for more users and at dense zoom levels.</p>
+          </div>
+          <div class="timeline-item">
+            <strong>9. Turn lookup into planning</strong>
+            <p>The user asked whether each postal code is above or below average against its constituency, nearby constituencies, and Singapore. We added benchmark modes, percentiles, counts within 500m and 1km, and a details page with examples ranked above and below.</p>
+          </div>
+          <div class="timeline-item">
+            <strong>10. Add affordability</strong>
+            <p>HDB resale prices and HDB median rents were added so access could be read alongside affordability. We decided higher price or rent should be treated as pressure in the visual chips.</p>
+          </div>
+          <div class="timeline-item">
+            <strong>11. Add transit</strong>
+            <p>MRT stations, bus terminals/interchanges, and future Circle Line Stage 6 reminders were added. We included nearest transit chips and distances in the map overlay.</p>
+          </div>
+          <div class="timeline-item">
+            <strong>12. Add climate visuals</strong>
+            <p>The user wanted sun, wind, and heat information without clutter. We added a toggleable climate lens with animated sun path, wind flow, PM west sun, and a heat proxy. Later, we made PM west sun and heat proxy month-sensitive.</p>
+          </div>
+          <div class="timeline-item">
+            <strong>13. Tame the interface</strong>
+            <p>As the sidebar grew, the user asked to avoid one long scroll. We converted lower sections into expandable panels and added a short upfront description of what the tool is most useful for.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Product Principles We Settled On</h2>
+        <div class="two-col">
+          <div>
+            <h3>Planning lens, not verdict</h3>
+            <p>The app should help users ask better questions. It should not pretend to be the final authority on a neighbourhood.</p>
+          </div>
+          <div>
+            <h3>Show the basis for comparison</h3>
+            <p>Percentiles and "above/below" labels only make sense when users can see what they are being compared against.</p>
+          </div>
+          <div>
+            <h3>Prefer official/open signals</h3>
+            <p>When Google reviews were impractical, official source, access type, provenance, distance, and QA notes became the trust layer.</p>
+          </div>
+          <div>
+            <h3>Visual first, text when needed</h3>
+            <p>Dense planning information should be scannable through chips, shapes, colours, toggles, and map overlays before users read details.</p>
+          </div>
+          <div>
+            <h3>Separate demographics respectfully</h3>
+            <p>Children, youth, and ageing facilities are related, but they serve different populations and should be visible as distinct layers.</p>
+          </div>
+          <div>
+            <h3>Label proxies clearly</h3>
+            <p>Population-weighting, heat exposure, and transit distances are useful proxies, but the app should say what they are and what they are not.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Current Data Layers</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Layer</th>
+              <th>What it includes</th>
+              <th>Important decision</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Health</td>
+              <td>Curated public institutions and polyclinics, CHAS clinics, and HSA retail pharmacies.</td>
+              <td>Broadened beyond hospitals because primary care and pharmacies matter for everyday access.</td>
+            </tr>
+            <tr>
+              <td>Ageing</td>
+              <td>Eldercare, senior activity centres, cluster support, aged-care homes, and similar points from available official data.</td>
+              <td>Marked sector as Public, Private, People/social sector, or Unknown using conservative inference.</td>
+            </tr>
+            <tr>
+              <td>Children</td>
+              <td>ECDA childcare and kindergarten centres geocoded through OneMap postal-code coordinates.</td>
+              <td>Added OneMap geocode cache so these are exact pins instead of rough postal-sector approximations.</td>
+            </tr>
+            <tr>
+              <td>Youth</td>
+              <td>Youth-suitable recreation venues derived from sports facility records.</td>
+              <td>Separated from children after discussion, because youth needs and identity differ from kids.</td>
+            </tr>
+            <tr>
+              <td>Sport</td>
+              <td>Sport Facilities National Census records, including public and private/unknown venues.</td>
+              <td>Marked access type where possible instead of pretending all sport facilities are public.</td>
+            </tr>
+            <tr>
+              <td>Parks and PCN</td>
+              <td>NParks parks and park connector loop geometry represented by map points.</td>
+              <td>Included park connectors as their own layer because connectivity matters differently from park acreage.</td>
+            </tr>
+            <tr>
+              <td>Housing</td>
+              <td>HDB resale and rental medians by town and flat type, aggregated over the latest 12 months in the data bundle.</td>
+              <td>Displayed as HDB affordability, with high prices/rents shown as affordability pressure.</td>
+            </tr>
+            <tr>
+              <td>Transit</td>
+              <td>MRT stations, bus interchanges/terminals, and future Circle Line Stage 6 reminders.</td>
+              <td>Used straight-line planning distance for the static MVP, with a note to upgrade to official routing/network data later.</td>
+            </tr>
+            <tr>
+              <td>Climate</td>
+              <td>Month-specific sun path, PM west sun, seasonal wind flow, and heat exposure proxy.</td>
+              <td>Kept it visual and clearly labelled as a proxy, not measured block-level urban heat island modelling.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section">
+        <h2>Interface Decisions</h2>
+        <details open>
+          <summary>Map and search</summary>
+          <div class="detail-body">
+            <p>Postal-code search and dropped map points are the core entry points. The selected point is shown explicitly so users know what the distances and benchmarks refer to. The app uses Leaflet with OpenStreetMap tiles for a static, GitHub-friendly MVP.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Markers and popups</summary>
+          <div class="detail-body">
+            <p>Markers use both colour and shape. This was a direct response to the user noticing that colour alone was not visually clear enough. Popups appear on hover so the map can be explored without requiring sidebar clicks.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Counts and benchmarks</summary>
+          <div class="detail-body">
+            <p>The sidebar shows counts at 500m, 1km, and the selected radius. Benchmark cards compare the selected point against its constituency, nearby constituencies, and Singapore. Percentile was changed from compact "p" notation to clearer explanatory text where needed.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Map overlay</summary>
+          <div class="detail-body">
+            <p>The expandable overlay on the map summarises HDB affordability, access, transit, and city-centre proximity as visual chips. This was added so planning signals can be read on the map itself, not only in the left panel.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Climate lens</summary>
+          <div class="detail-body">
+            <p>The climate layer is off by default. When opened, it zooms to a useful planning scale, shows animated sun and wind visuals, and restores the previous map view when closed. PM west sun rotates with the month, and heat proxy responds to greenery, centrality, PM sun, and wind season.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Sidebar structure</summary>
+          <div class="detail-body">
+            <p>After the app accumulated many useful sections, lower panels became collapsible: benchmark scores, housing, nearest by category, nearest overall, and facility list. This keeps the first screen focused while preserving depth.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="section">
+        <h2>Benchmark Logic</h2>
+        <p>
+          The benchmark system compares a selected point with residential benchmark points rather than arbitrary map space. This matters because planning questions are usually about lived access.
+        </p>
+        <div class="two-col">
+          <div class="card">
+            <strong>Residential locations</strong>
+            <span>Each HDB residential building or postal point is treated equally. This is simple and transparent.</span>
+          </div>
+          <div class="card">
+            <strong>Population weighted</strong>
+            <span>HDB footprint area is used as an open-data proxy weight until dwelling-unit or population-weighted data is added.</span>
+          </div>
+        </div>
+        <div class="callout warning">
+          <strong>Percentile interpretation:</strong>
+          A percentile of 80 means the selected point ranks above about 80 percent of comparison points for that metric. For access and transit, higher is generally better. For HDB resale and rent, higher is treated as affordability pressure.
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Rebuild Guide</h2>
+        <p>Use this sequence if a future developer or AI needs to recreate the atlas from scratch.</p>
+        <ol>
+          <li>Create a static web app with `index.html`, `styles.css`, `app.js`, and a `data/` folder of JavaScript data bundles.</li>
+          <li>Use Leaflet and OpenStreetMap tiles for the map so the app can run from GitHub Pages without a backend.</li>
+          <li>Define facility categories first: healthcare, ageing, children, youth, sport, park, and connector.</li>
+          <li>Normalize each record into a shared shape: name, category, subcategory, latitude, longitude, source, access/sector, official signal, and optional source URL.</li>
+          <li>Geocode postal-code based datasets through OneMap and cache results locally in the data build process.</li>
+          <li>Render map markers from the same filtered record list used for counts and sidebars, so counts and pins cannot drift apart.</li>
+          <li>Add hover popups directly to markers, and keep category shapes distinct from colours.</li>
+          <li>Build benchmark points from HDB residential locations and constituencies from electoral boundaries.</li>
+          <li>For each category and radius, count facilities around every benchmark point and compute averages and percentiles for constituency, nearby constituencies, and Singapore.</li>
+          <li>Create a separate benchmark details page that lists examples just above and below the selected point.</li>
+          <li>Aggregate HDB resale and rental data by town and flat type over the selected period, then infer the selected town from searched address text when possible.</li>
+          <li>Add transit nodes and compute nearest MRT, bus terminal/interchange, and future station distances.</li>
+          <li>Add a climate lens only after the core access/affordability map works. Keep sun, PM west sun, wind, and heat proxy visually distinct.</li>
+          <li>Add QA and methodology pages early. They become more important as the atlas gains layers.</li>
+          <li>Keep every proxy labelled. Do not hide uncertainty just to make the interface feel more complete.</li>
+        </ol>
+        <pre><code>python3 -m http.server 8768
+# then open http://127.0.0.1:8768/?q=382002</code></pre>
+      </section>
+
+      <section class="section">
+        <h2>File Map</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>index.html</code></td>
+              <td>Main app shell, controls, sidebar, map container, climate controls, and script/data includes.</td>
+            </tr>
+            <tr>
+              <td><code>styles.css</code></td>
+              <td>Responsive layout, marker shapes, panels, chips, overlays, and climate animation styling.</td>
+            </tr>
+            <tr>
+              <td><code>app.js</code></td>
+              <td>Main application logic: search, map rendering, filtering, popups, benchmarks, housing overlay, transit, and climate layer.</td>
+            </tr>
+            <tr>
+              <td><code>data/facilities.js</code></td>
+              <td>Bundled normalized facility records across care, ageing, children, youth, sport, parks, and PCN.</td>
+            </tr>
+            <tr>
+              <td><code>data/benchmarks.js</code></td>
+              <td>Constituency geometry, residential benchmark points, benchmark stats, and percentile data.</td>
+            </tr>
+            <tr>
+              <td><code>data/housing.js</code></td>
+              <td>HDB resale and rental medians plus town-level comparison distributions.</td>
+            </tr>
+            <tr>
+              <td><code>data/transit.js</code></td>
+              <td>MRT, bus terminal/interchange, future station records, and transit benchmark histograms.</td>
+            </tr>
+            <tr>
+              <td><code>data/qa.js</code></td>
+              <td>QA page data: record counts, source checks, caveats, and review status.</td>
+            </tr>
+            <tr>
+              <td><code>benchmark-details.html/js/css</code></td>
+              <td>Detailed benchmark report for the selected postal code or point.</td>
+            </tr>
+            <tr>
+              <td><code>data-qa.html/js/css</code></td>
+              <td>QA and methodology companion page.</td>
+            </tr>
+            <tr>
+              <td><code>build-journal.html</code></td>
+              <td>This collaboration and rebuild reference.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section">
+        <h2>Known Limitations And Future Upgrades</h2>
+        <div class="tag-row">
+          <span class="tag rust">Not live routing</span>
+          <span class="tag rust">Not measured UHI</span>
+          <span class="tag rust">Not full private market data</span>
+          <span class="tag blue">Static MVP</span>
+          <span class="tag green">Open-data first</span>
+        </div>
+        <ul>
+          <li>Walking time, cycling time, and public transport travel time should eventually replace straight-line distances where routing data is available.</li>
+          <li>Climate and heat should be upgraded with measured or modelled land-surface temperature, shade, tree canopy, building mass, and wind corridor data.</li>
+          <li>Future transit stations should be reviewed when official opening dates and coordinates change.</li>
+          <li>Population-weighted benchmarks should move from footprint proxy to dwelling-unit or population-weighted points.</li>
+          <li>Private residential sale and rental data should be added only if licensing and source terms allow it.</li>
+          <li>A server-side geocoding layer would avoid exposing API keys and improve exact search coverage.</li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>What Future Builders Should Preserve</h2>
+        <p>
+          Preserve the spirit of the collaboration: keep the app legible, honest, and planning-oriented. When a user asks "what does this mean?", the interface should already be halfway to answering. When a dataset is imperfect, mark the limitation rather than burying it. When two groups have different needs, give them separate layers. When the map gets too busy, use toggles, collapsible panels, and visual summaries rather than more text.
+        </p>
+        <div class="callout">
+          <strong>Core sentence to keep:</strong>
+          A planning lens for spotting neighbourhood strengths and gaps around a Singapore postal code: access, HDB affordability, transit, parks, and climate comfort. Benchmarks are comparative signals, not certified site assessments.
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

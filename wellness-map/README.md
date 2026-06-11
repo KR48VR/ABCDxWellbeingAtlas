@@ -3,6 +3,8 @@
 Static MVP for searching a Singapore postal sector or dropped map point and ranking nearby healthcare, ageing, children, youth, sport, park, and park connector facilities.
 It also shows recent HDB resale and rent context when the searched address can be matched to an HDB town.
 
+For a detailed narrative of how this was built, including the back-and-forth product decisions and rebuild guidance, see `build-journal.html`.
+
 ## Run
 
 ```sh
