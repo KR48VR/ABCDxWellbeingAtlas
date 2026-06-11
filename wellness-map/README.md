@@ -34,7 +34,7 @@ Open `http://127.0.0.1:8766/`.
 - Housing context uses official HDB resale flat prices and HDB renting-out-of-flats transactions, aggregated over the latest 12 months by HDB town and flat type.
 - Housing town inference uses exact searched address text matched against recent HDB block/street transaction records; it is strongest for HDB block/postal searches and may be unavailable for dropped pins or non-HDB addresses.
 - Transit context currently uses a bundled Wikidata coordinate export for MRT stations and bus interchanges/terminals, plus a curated future-station reminder for Circle Line Stage 6. Distances are straight-line planning distances, not walking or network distances.
-- Climate overlay is a visual planning aid: sun arc/PM sun direction are calculated from month and location, prevailing winds are seasonal Singapore climate patterns, and heat exposure is a proxy based on nearby parks/connectors plus urban-centrality pressure. It is not a measured block-level urban heat island model.
+- Climate overlay is a visual planning aid: sun arc/PM sun direction are calculated from month and location, prevailing winds are seasonal Singapore climate patterns, and heat exposure is a proxy based on nearby parks/connectors, urban-centrality pressure, month-specific PM sun, and seasonal wind relief. It is not a measured block-level urban heat island model.
 
 ## Next Data Work
 

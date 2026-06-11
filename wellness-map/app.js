@@ -1215,16 +1215,17 @@ function renderClimateLayer() {
 
   const selected = state.selected;
   const climate = CLIMATE_MONTHS[state.climateMonth] || CLIMATE_MONTHS[0];
-  const heat = heatExposureSummary();
   const sun = sunPathSummary(state.climateMonth);
+  const pmSun = pmSunSummary(sun);
+  const heat = heatExposureSummary(climate, pmSun);
   const downwind = (climate.windFrom + 180) % 360;
   const sunRadiusKm = 0.86;
 
   L.polygon([
     [selected.lat, selected.lng],
-    latLngFromBearing(selected, 245, 0.92),
-    latLngFromBearing(selected, 282, 1.05),
-    latLngFromBearing(selected, 315, 0.92)
+    latLngFromBearing(selected, pmSun.startBearing, 0.92),
+    latLngFromBearing(selected, pmSun.centerBearing, 1.06),
+    latLngFromBearing(selected, pmSun.endBearing, 0.92)
   ], {
     className: "climate-pm-wedge",
     color: "#c026d3",
@@ -1264,7 +1265,7 @@ function renderClimateLayer() {
     interactive: false
   }).addTo(state.climateLayer);
 
-  climateLabel(latLngFromBearing(selected, 282, 0.72), "PM west sun", "high exposure", "sun").addTo(state.climateLayer);
+  climateLabel(latLngFromBearing(selected, pmSun.centerBearing, 0.72), "PM west sun", pmSun.detail, "sun").addTo(state.climateLayer);
   climateLabel(latLngFromBearing(selected, downwind, 0.94), "Wind flow", climate.windDetail, "wind").addTo(state.climateLayer);
   climateLabel(latLngFromBearing(selected, 18, 0.34), heat.label, heat.short, `heat ${heat.status}`).addTo(state.climateLayer);
   windArrowHead(windStart, downwind).addTo(state.climateLayer);
@@ -1305,7 +1306,17 @@ function sunArcPoints(origin, startBearing, endBearing, radiusKm) {
   return points;
 }
 
-function heatExposureSummary() {
+function pmSunSummary(sun) {
+  const centerBearing = normalizeBearing(sun.sunsetBearing);
+  return {
+    centerBearing,
+    startBearing: normalizeBearing(centerBearing - 27),
+    endBearing: normalizeBearing(centerBearing + 27),
+    detail: `${compassDirection(centerBearing)} exposure`
+  };
+}
+
+function heatExposureSummary(climate, pmSun) {
   const scoredFacilities = state.facilities.map((facility) => ({
     ...facility,
     distanceKm: distanceKm(state.selected.lat, state.selected.lng, facility.lat, facility.lng)
@@ -1319,6 +1330,9 @@ function heatExposureSummary() {
   else score -= 1;
   if (connectors >= 5) score -= 1;
   if ((city?.percentile || 0) >= 85) score += 1;
+  if (angleDifference(pmSun.centerBearing, 270) <= 35) score += 1;
+  if (climate.season === "Inter-monsoon") score += 1;
+  else if (climate.season.includes("monsoon")) score -= 1;
 
   if (score >= 2) return { status: "high", label: "Heat proxy", short: "higher risk", color: "#d05a34" };
   if (score <= -1) return { status: "lower", label: "Heat proxy", short: "lower risk", color: "#2f8a4d" };
@@ -1362,6 +1376,20 @@ function latLngFromBearing(origin, bearing, distance) {
     Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(lat2)
   );
   return [lat2 * 180 / Math.PI, lng2 * 180 / Math.PI];
+}
+
+function normalizeBearing(bearing) {
+  return ((bearing % 360) + 360) % 360;
+}
+
+function angleDifference(a, b) {
+  const diff = Math.abs(normalizeBearing(a) - normalizeBearing(b));
+  return Math.min(diff, 360 - diff);
+}
+
+function compassDirection(bearing) {
+  const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+  return directions[Math.round(normalizeBearing(bearing) / 22.5) % directions.length];
 }
 
 function clamp(value, min, max) {
