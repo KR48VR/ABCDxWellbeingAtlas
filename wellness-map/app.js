@@ -1243,6 +1243,9 @@ function renderClimateLayer() {
     weight: 5,
     interactive: false
   }).addTo(state.climateLayer);
+  sunTimeLabels(selected, sun, sunRadiusKm).forEach((item) => {
+    climateTimeLabel(item.latlng, item.label).addTo(state.climateLayer);
+  });
 
   L.circle([selected.lat, selected.lng], {
     className: `heat-halo ${heat.status}`,
@@ -1306,6 +1309,16 @@ function sunArcPoints(origin, startBearing, endBearing, radiusKm) {
   return points;
 }
 
+function sunTimeLabels(origin, sun, radiusKm) {
+  return ["7am", "10am", "1pm", "4pm", "7pm"].map((label, index, labels) => {
+    const bearing = sun.sunriseBearing + ((sun.sunsetBearing - sun.sunriseBearing) * index / (labels.length - 1));
+    return {
+      label,
+      latlng: latLngFromBearing(origin, bearing, radiusKm + 0.035)
+    };
+  });
+}
+
 function pmSunSummary(sun) {
   const centerBearing = normalizeBearing(sun.sunsetBearing);
   return {
@@ -1347,6 +1360,18 @@ function climateLabel(latlng, title, detail, type) {
       html: `<strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail)}</small>`,
       iconSize: [92, 38],
       iconAnchor: [46, 19]
+    })
+  });
+}
+
+function climateTimeLabel(latlng, label) {
+  return L.marker(latlng, {
+    interactive: false,
+    icon: L.divIcon({
+      className: "climate-time-label",
+      html: `<span>${escapeHtml(label)}</span>`,
+      iconSize: [38, 22],
+      iconAnchor: [19, 11]
     })
   });
 }
