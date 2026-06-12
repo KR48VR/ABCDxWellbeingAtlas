@@ -602,10 +602,12 @@ function renderMapHousing(summary) {
         ${mapHousingMetric("Rent", summary.rent)}
       </div>
       ${renderMapHousingSignals(summary)}
+      ${renderFengshuiFunLens(summary)}
       <small>Town-level housing · ${formatRadiusLabel(state.benchmarkRadius)} amenity access</small>
     ` : `
       <p class="map-housing-compact">${escapeHtml(inlineMetrics)}</p>
       <small>Town-level housing · ${formatRadiusLabel(state.benchmarkRadius)} access</small>
+      <p class="map-overlay-preview">Expand to compare access, transit, climate comfort, and the Fengshui Fun Lens.</p>
     `}
   `;
 
@@ -674,6 +676,103 @@ function renderMapHousingSignals(summary) {
         </div>
       ` : ""}
       <p class="signal-note">p = percentile. City/transit/access p compare against benchmark points; resale/rent p compares against Singapore HDB towns.</p>
+    </div>
+  `;
+}
+
+function renderFengshuiFunLens(summary) {
+  const lens = fengshuiFunSummary(summary);
+  return `
+    <section class="fengshui-card" aria-label="Fengshui Fun Lens">
+      <div class="fengshui-head">
+        <div>
+          <strong>Fengshui Fun Lens</strong>
+          <small>Fun, not formal</small>
+        </div>
+        <span>${escapeHtml(lens.vibe)}</span>
+      </div>
+      <div class="fengshui-bars">
+        ${fengshuiBar("Water", lens.water, "water")}
+        ${fengshuiBar("Green", lens.green, "green")}
+        ${fengshuiBar("Flow", lens.flow, "flow")}
+        ${fengshuiBar("Heat", lens.heat, "heat")}
+        ${fengshuiBar("Balance", lens.balance, "balance")}
+      </div>
+    </section>
+  `;
+}
+
+function fengshuiFunSummary(summary) {
+  const climate = CLIMATE_MONTHS[state.climateMonth] || CLIMATE_MONTHS[0];
+  const sun = sunPathSummary(state.climateMonth);
+  const heat = heatExposureSummary(climate, pmSunSummary(sun));
+  const facilities = state.facilities.map((facility) => ({
+    ...facility,
+    distanceKm: distanceKm(state.selected.lat, state.selected.lng, facility.lat, facility.lng)
+  }));
+  const near = facilities.filter((facility) => facility.distanceKm <= 1);
+  const water = fengshuiLevel(waterInfluenceScore(facilities), ["Light", "Moderate", "Strong"]);
+  const green = fengshuiLevel(
+    near.filter((facility) => facility.category === "park").length +
+    Math.min(4, near.filter((facility) => facility.category === "connector").length) * 0.5,
+    ["Light", "Moderate", "Strong"]
+  );
+  const flowScore =
+    (summary.transit?.mrt?.status === "above" ? 2 : 0) +
+    (summary.transit?.bus?.status === "above" ? 1 : 0) +
+    Math.min(3, near.filter((facility) => facility.category === "connector").length) +
+    (summary.centrality?.percentile >= 80 ? 1 : 0);
+  const flow = fengshuiLevel(flowScore, ["Gentle", "Active", "Very active"]);
+  const heatValue = heat.status === "high" ? 5 : heat.status === "mixed" ? 3 : 1;
+  const heatLabel = heat.status === "high" ? "Intense" : heat.status === "mixed" ? "Mixed" : "Cooling";
+  const balanceScore = summary.amenity?.score || 0;
+  const balance = {
+    value: balanceScore >= 2 ? 5 : balanceScore <= -2 ? 2 : 3,
+    label: balanceScore >= 2 ? "Supported" : balanceScore <= -2 ? "Needs support" : "Mixed"
+  };
+  const vibe = fengshuiVibe(flow, green, heat.status, balance);
+
+  return {
+    vibe,
+    water,
+    green,
+    flow,
+    heat: { value: heatValue, label: heatLabel },
+    balance
+  };
+}
+
+function waterInfluenceScore(facilities) {
+  const waterWords = /\b(river|canal|reservoir|bay|coast|beach|waterfront|marine|basin)\b/i;
+  const namedWater = facilities.filter((facility) =>
+    facility.distanceKm <= 1.5 &&
+    waterWords.test(`${facility.name || ""} ${facility.subcategory || ""}`)
+  ).length;
+  const placeHint = waterWords.test(`${state.selected.title || ""} ${state.selected.meta || ""}`) ? 1 : 0;
+  return Math.min(5, namedWater + placeHint);
+}
+
+function fengshuiLevel(score, labels) {
+  const value = score >= 4 ? 5 : score >= 2 ? 3 : 1;
+  const label = value >= 5 ? labels[2] : value >= 3 ? labels[1] : labels[0];
+  return { value, label };
+}
+
+function fengshuiVibe(flow, green, heatStatus, balance) {
+  if (flow.value >= 5 && heatStatus === "high") return "Lively + Hot";
+  if (flow.value >= 5 && green.value >= 3) return "Lively + Connected";
+  if (green.value >= 5 && balance.value >= 3) return "Calm + Supported";
+  if (balance.value <= 2) return "Needs Support";
+  return "Mixed + Active";
+}
+
+function fengshuiBar(label, item, type) {
+  const blocks = Array.from({ length: 5 }, (_, index) => `<span class="${index < item.value ? "filled" : ""}"></span>`).join("");
+  return `
+    <div class="fengshui-row ${escapeHtml(type)}">
+      <strong>${escapeHtml(label)}</strong>
+      <div class="fengshui-meter" aria-hidden="true">${blocks}</div>
+      <span>${escapeHtml(item.label)}</span>
     </div>
   `;
 }

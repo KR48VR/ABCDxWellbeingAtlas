@@ -1350,6 +1350,114 @@ button:disabled {
   line-height: 1.3;
 }
 
+.fengshui-card {
+  margin: 8px 0;
+  padding: 10px;
+  border: 1px solid #ead8b8;
+  border-radius: 8px;
+  background: #fffaf0;
+  font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
+}
+
+.fengshui-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.fengshui-head div {
+  display: grid;
+  gap: 1px;
+}
+
+.fengshui-head strong {
+  color: #6b3f08;
+  font-size: 14px;
+  line-height: 1.1;
+}
+
+.fengshui-head small {
+  color: #8a6a3d;
+  font-size: 10px;
+  font-weight: 820;
+}
+
+.fengshui-head > span {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #f3e7cc;
+  color: #6b3f08;
+  font-size: 10px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.fengshui-bars {
+  display: grid;
+  gap: 5px;
+}
+
+.fengshui-row {
+  display: grid;
+  grid-template-columns: 56px 1fr 86px;
+  gap: 7px;
+  align-items: center;
+  color: #3a2d1d;
+  font-size: 11px;
+}
+
+.fengshui-row strong,
+.fengshui-row > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fengshui-row strong {
+  font-weight: 900;
+}
+
+.fengshui-row > span {
+  color: #5f4f39;
+  font-weight: 820;
+  text-align: right;
+}
+
+.fengshui-meter {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
+  height: 10px;
+}
+
+.fengshui-meter span {
+  border-radius: 999px;
+  background: rgba(58, 45, 29, 0.11);
+}
+
+.fengshui-row.water .fengshui-meter .filled {
+  background: #2f95d1;
+}
+
+.fengshui-row.green .fengshui-meter .filled {
+  background: #2f8a4d;
+}
+
+.fengshui-row.flow .fengshui-meter .filled {
+  background: #7a5ab8;
+}
+
+.fengshui-row.heat .fengshui-meter .filled {
+  background: #d05a34;
+}
+
+.fengshui-row.balance .fengshui-meter .filled {
+  background: #8b6f2f;
+}
+
 .map-housing-overlay p {
   margin: 0 0 7px;
   color: #465257;
@@ -1359,6 +1467,13 @@ button:disabled {
 .map-housing-overlay .map-housing-compact {
   font-weight: 820;
   color: var(--ink);
+}
+
+.map-overlay-preview {
+  margin: 6px 0 0 !important;
+  color: #5f6e72 !important;
+  font-size: 11px;
+  font-weight: 720;
 }
 
 .facility-pin,
